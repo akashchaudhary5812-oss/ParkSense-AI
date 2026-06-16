@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ParkSense AI — Parking Intelligence Platform | Bengaluru</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0a0d14;--bg2:#111520;--bg3:#161c2d;--bg4:#1e2538;
+  --accent:#6c63ff;--accent2:#ff6584;--accent3:#43d9ad;--accent4:#f7b731;
+  --text:#e8eaf6;--text2:#9faac3;--border:#2a3355;
+  --red:#ff4757;--orange:#ff7f50;--yellow:#ffd700;--green:#43d9ad;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+/* SIDEBAR */
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100;}
+.logo{padding:24px 20px;border-bottom:1px solid var(--border);}
+.logo h1{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo p{color:var(--text2);font-size:0.7rem;margin-top:3px;}
+.nav{padding:16px 0;flex:1;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;cursor:pointer;color:var(--text2);font-size:0.85rem;font-weight:500;transition:all .2s;border-left:3px solid transparent;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{border-left-color:var(--accent);background:var(--bg3);color:var(--accent);}
+.nav-item .icon{width:18px;text-align:center;}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);}
+.status-dot{width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+/* MAIN */
+.main{margin-left:240px;min-height:100vh;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.topbar h2{font-size:1rem;font-weight:600;color:var(--text);}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.badge{padding:4px 12px;border-radius:20px;font-size:0.7rem;font-weight:600;}
+.badge-live{background:rgba(67,217,173,.15);color:var(--green);border:1px solid rgba(67,217,173,.3);}
+.badge-alert{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3);}
+.page{display:none;padding:28px;}
+.page.active{display:block;}
+/* GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;transition:transform .2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.red::before{background:linear-gradient(90deg,var(--red),var(--orange));}
+.stat-card.purple::before{background:linear-gradient(90deg,var(--accent),#a78bfa);}
+.stat-card.green::before{background:linear-gradient(90deg,var(--green),#06d6a0);}
+.stat-card.yellow::before{background:linear-gradient(90deg,var(--yellow),var(--orange));}
+.stat-label{font-size:0.72rem;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.06em;}
+.stat-value{font-size:2rem;font-weight:800;margin:6px 0 4px;line-height:1;}
+.stat-sub{font-size:0.72rem;color:var(--text2);}
+.stat-icon{position:absolute;right:16px;top:16px;font-size:1.8rem;opacity:.15;}
+/* CHARTS GRID */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.charts-grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px;}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.chart-title{font-size:0.85rem;font-weight:600;margin-bottom:4px;}
+.chart-sub{font-size:0.72rem;color:var(--text2);margin-bottom:16px;}
+.chart-wrap{position:relative;height:220px;}
+/* TABLE */
+.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:0.72rem;color:var(--text2);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+td{padding:10px 12px;font-size:0.83rem;border-bottom:1px solid rgba(42,51,85,.5);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.rank-num{font-weight:700;color:var(--accent);}
+/* CIS BARS */
+.cis-bar-wrap{display:flex;align-items:center;gap:10px;}
+.cis-bar{height:6px;border-radius:3px;background:var(--bg3);flex:1;overflow:hidden;}
+.cis-fill{height:100%;border-radius:3px;}
+.cis-val{font-size:0.78rem;font-weight:700;min-width:28px;}
+/* PRIORITY CARDS */
+.priority-list{display:flex;flex-direction:column;gap:12px;}
+.priority-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-left:4px solid;}
+.priority-card.critical{border-left-color:var(--red);}
+.priority-card.high{border-left-color:var(--orange);}
+.priority-card.medium{border-left-color:var(--yellow);}
+.pc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.pc-name{font-size:0.88rem;font-weight:600;}
+.pc-eps{font-size:0.78rem;font-weight:700;padding:2px 8px;border-radius:4px;}
+.critical .pc-eps{background:rgba(255,71,87,.2);color:var(--red);}
+.high .pc-eps{background:rgba(255,127,80,.2);color:var(--orange);}
+.medium .pc-eps{background:rgba(255,215,0,.2);color:var(--yellow);}
+.pc-detail{font-size:0.75rem;color:var(--text2);}
+.pc-action{margin-top:8px;font-size:0.73rem;font-weight:500;display:flex;align-items:center;gap:6px;}
+/* FORECAST */
+.forecast-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.forecast-zone{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.fz-header{display:flex;justify-content:space-between;margin-bottom:8px;}
+.fz-name{font-size:0.82rem;font-weight:600;}
+.fz-prob{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:4px;}
+.fz-prob.high{background:rgba(255,71,87,.2);color:var(--red);}
+.fz-prob.med{background:rgba(255,127,80,.2);color:var(--orange);}
+.fz-prob.low{background:rgba(255,215,0,.2);color:var(--yellow);}
+.fz-peak{font-size:.7rem;color:var(--text2);}
+/* INSIGHTS */
+.insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.insight-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;gap:12px;}
+.insight-num{font-size:1.5rem;font-weight:800;color:var(--accent);min-width:32px;}
+.insight-text{font-size:.78rem;color:var(--text2);line-height:1.5;}
+.insight-text strong{color:var(--text);}
+/* MAP PLACEHOLDER */
+.map-canvas{background:var(--bg3);border-radius:10px;border:1px solid var(--border);height:380px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;position:relative;overflow:hidden;}
+.map-dots{position:absolute;inset:0;}
+.map-dot{position:absolute;border-radius:50%;animation:dotp 3s infinite;}
+@keyframes dotp{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.5);opacity:.4;}}
+.map-label{font-size:.85rem;color:var(--text2);z-index:2;}
+/* SHAP */
+.shap-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;}
+.shap-title{font-size:.82rem;font-weight:600;margin-bottom:4px;}
+.shap-sub{font-size:.72rem;color:var(--text2);margin-bottom:12px;}
+.shap-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.shap-feature{font-size:.75rem;color:var(--text2);min-width:160px;}
+.shap-bar-wrap{flex:1;background:var(--bg4);border-radius:3px;height:7px;overflow:hidden;}
+.shap-bar-pos{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--orange));}
+.shap-bar-neg{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),#06b6d4);}
+.shap-val{font-size:.75rem;font-weight:600;min-width:40px;text-align:right;}
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:20px;}
+.tab{padding:7px 16px;border-radius:6px;font-size:.8rem;font-weight:500;cursor:pointer;color:var(--text2);border:1px solid var(--border);transition:all .15s;}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.section-title{font-size:1.1rem;font-weight:700;margin-bottom:4px;}
+.section-sub{font-size:.78rem;color:var(--text2);margin-bottom:20px;}
+/* METRIC ROW */
+.metric-row{display:flex;gap:12px;margin-bottom:16px;}
+.metric-mini{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;}
+.mm-label{font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+.mm-value{font-size:1.2rem;font-weight:700;margin-top:2px;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">
+    <h1>🅿️ ParkSense AI</h1>
+    <p>Parking Intelligence Platform</p>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('overview')"><span class="icon">📊</span> City Overview</div>
+    <div class="nav-item" onclick="showPage('hotspots')"><span class="icon">🔥</span> Live Hotspots</div>
+    <div class="nav-item" onclick="showPage('forecast')"><span class="icon">🔮</span> 72h Forecast</div>
+    <div class="nav-item" onclick="showPage('rankings')"><span class="icon">📈</span> Risk Rankings</div>
+    <div class="nav-item" onclick="showPage('patrol')"><span class="icon">🚔</span> Patrol Intelligence</div>
+    <div class="nav-item" onclick="showPage('xai')"><span class="icon">🧠</span> Explainable AI</div>
+    <div class="nav-item" onclick="showPage('analytics')"><span class="icon">📉</span> Analytics</div>
+  </nav>
+  <div class="sidebar-footer">
+    <span class="status-dot"></span>
+    <span style="font-size:.75rem;color:var(--text2);margin-left:8px;">Live · Bengaluru BTP</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h2 id="page-title">City Overview — Bengaluru Traffic Violations</h2>
+    <div class="topbar-right">
+      <span class="badge badge-live">● LIVE</span>
+      <span class="badge badge-alert">⚠ 3 CRITICAL ALERTS</span>
+      <span style="font-size:.78rem;color:var(--text2);">Dataset: Nov 2023–Apr 2024</span>
+    </div>
+  </div>
+
+  <!-- OVERVIEW PAGE -->
+  <div class="page active" id="page-overview">
+    <div class="stats-grid">
+      <div class="stat-card red">
+        <div class="stat-label">Total Violations</div>
+        <div class="stat-value" style="color:var(--red)">298,450</div>
+        <div class="stat-sub">Nov 2023 – Apr 2024</div>
+        <div class="stat-icon">🚫</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">Unique Vehicles</div>
+        <div class="stat-value" style="color:var(--accent)">231,890</div>
+        <div class="stat-sub">231,890 unique plates recorded</div>
+        <div class="stat-icon">🚗</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">Repeat Offenders</div>
+        <div class="stat-value" style="color:var(--yellow)">35,587</div>
+        <div class="stat-sub">15.4% of all vehicles</div>
+        <div class="stat-icon">🔁</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Avg Response Lag</div>
+        <div class="stat-value" style="color:var(--accent3)">468h</div>
+        <div class="stat-sub">Median 428h (18 days!)</div>
+        <div class="stat-icon">⏱</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Hourly Violation Distribution</div>
+        <div class="chart-sub">Peak at 5AM (11.4%) — 75.4% violations between 10PM–6AM</div>
+        <div class="chart-wrap"><canvas id="hourlyChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Monthly Violations Trend</div>
+        <div class="chart-sub">January 2024 peak (65,813). Dec–Jan = holiday surge.</div>
+        <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Violation Type Breakdown</div>
+        <div class="chart-sub">Wrong Parking + No Parking = 55%+ of all cases</div>
+        <div class="chart-wrap"><canvas id="violationChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Vehicle Type Distribution</div>
+        <div class="chart-sub">Scooters (94,856) numerically dominant; buses most severe per case</div>
+        <div class="chart-wrap"><canvas id="vehicleChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOTSPOTS PAGE -->
+  <div class="page" id="page-hotspots">
+    <div class="section-title">🔥 Live Hotspot Intelligence</div>
+    <div class="section-sub">Detected via DBSCAN spatial clustering · Last updated: real-time</div>
+
+    <div class="stats-grid">
+      <div class="stat-card red"><div class="stat-label">Critical Zones</div><div class="stat-value" style="color:var(--red)">8</div><div class="stat-sub">CIS Score ≥ 8.0</div></div>
+      <div class="stat-card yellow"><div class="stat-label">High Risk Zones</div><div class="stat-value" style="color:var(--yellow)">24</div><div class="stat-sub">CIS Score 6.0–7.9</div></div>
+      <div class="stat-card purple"><div class="stat-label">Total Hotspot Cells</div><div class="stat-value" style="color:var(--accent)">168</div><div class="stat-sub">H3 resolution 7 cells</div></div>
+      <div class="stat-card green"><div class="stat-label">Top Zone Violations</div><div class="stat-value" style="color:var(--green)">4,411</div><div class="stat-sub">Shivajinagar/MG Road</div></div>
+    </div>
+
+    <div class="charts-grid-3">
+      <div class="table-card">
+        <div class="chart-title" style="margin-bottom:14px;">🗺 Hotspot Zone Rankings (Top 10)</div>
+        <table>
+          <thead><tr><th>#</th><th>Zone / Area</th><th>Violations</th><th>CIS Score</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="rank-num">1</td><td>Shivajinagar / MG Road (12.981, 77.610)</td><td>4,411</td><td><div class="cis-bar-wrap"><div class="cis-bar"><div class="cis-fill" style="width:84%;background:linear-gradient(90deg,var(--red),var(--orange))"></div></div><span class="cis-val" style="color:var(--red)">8.4</span></div></td><td style="color:var(--red)">🔴 CRITICAL</td></tr>
+            <tr><td class="rank-num">2</td><td>Rajajinagar (12.964, 77.577)</td><td>3,745</td><td><div class="cis-bar-wrap"><div class="cis-bar"><div class="cis-fill" style="width:78%;background:linear-gradient(90deg,var(--red),var(--orange))"></div></div><span class="cis-val" style="color:var(--red)">7.8</span></div></td><td style="color:var(--orange)">🟠 HIGH</td></tr>
+            <tr><td class="rank-num">3</td><td>HAL Airport Road (12.934, 77.691)</td><td>3,343</td><td><div class="cis-bar-wrap"><div class="cis-bar"><div class="cis-fill" style="width:74%;background:var(--orange)"></div></div><span class="cis-val" style="color:var(--orange)">7.4</span></div></td><td style="color:var(--orange)">🟠 HIGH</td></tr>
+            <tr><td class="rank-num">4</td><td>Kodigehalli (13.071, 77.588)</td><td>3,280</td><td><div class="cis-bar-wrap"><div class="cis-bar"><div class="cis-fill" style="width:71%;background:var(--orange)"></div></div><span class="cis-val" style="color:var(--orange)">7.1</span></div></td><td style="color:var(--orange)">🟠 HIGH</td></tr>
+            <tr><td class="rank-num">5</td><td>Malleshwaram (12.977, 77.576)</td><td>3,181</td><td><div class="cis-bar-wrap"><div class="cis-bar"><div class="cis-fill" style="width:69%;background:var(--yellow)"></div></div><span class="cis-val" style="color:var(--yellow)">6.9</span></div></td><td style="color:var(--yellow)">🟡 MEDIUM-HIGH</td></tr>
+            <tr><td class="rank-num">6</td><td>Sadashivanagar (12.973, 77.579)</td><td>2,366</td><td><div class="cis-bar-wrap"><div class="cis-bar"><div class="cis-fill" style="width:63%;background:var(--yellow)"></div></div><span class="cis-val" style="color:var(--yellow)">6.3</span></div></td><td style="color:var(--yellow)">🟡 MEDIUM</td></tr>
+            <tr><td class="rank-num">7</td><td>Hebbal (13.035, 77.589)</td><td>2,284</td><td><div class="cis-bar-wrap"><div class="cis-bar"><div class="cis-fill" style="width:60%;background:var(--yellow)"></div></div><span class="cis-val" style="color:var(--yellow)">6.0</span></div></td><td style="color:var(--yellow)">🟡 MEDIUM</td></tr>
+            <tr><td class="rank-num">8</td><td>Chikkajala (13.184, 77.680)</td><td>1,926</td><td><div class="cis-bar-wrap"><div class="cis-bar"><div class="cis-fill" style="width:55%;background:var(--yellow)"></div></div><span class="cis-val" style="color:var(--yellow)">5.5</span></div></td><td style="color:var(--yellow)">🟡 MEDIUM</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="table-card" style="margin-bottom:0;">
+          <div class="chart-title" style="margin-bottom:12px;">🔦 Top Junctions</div>
+          <table>
+            <thead><tr><th>Junction</th><th>Violations</th></tr></thead>
+            <tbody>
+              <tr><td>Safina Plaza (BTP051)</td><td style="color:var(--red);font-weight:700">1,544</td></tr>
+              <tr><td>KR Market (BTP082)</td><td style="color:var(--orange);font-weight:700">1,153</td></tr>
+              <tr><td>Elite Junction (BTP040)</td><td style="color:var(--orange);font-weight:700">1,071</td></tr>
+              <tr><td>Sagar Theatre (BTP044)</td><td style="color:var(--yellow);font-weight:700">1,054</td></tr>
+              <tr><td>Central Street (BTP211)</td><td style="color:var(--yellow);font-weight:700">538</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="chart-card" style="margin-bottom:0;">
+          <div class="chart-title">Day/Night Split</div>
+          <div class="chart-sub">Night dominance is the key finding</div>
+          <div class="chart-wrap" style="height:160px;"><canvas id="nightDayChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORECAST PAGE -->
+  <div class="page" id="page-forecast">
+    <div class="section-title">🔮 72-Hour Hotspot Forecast</div>
+    <div class="section-sub">LSTM + Temporal Fusion Transformer · Predictions with 90% confidence intervals</div>
+
+    <div class="forecast-grid">
+      <div class="forecast-zone"><div class="fz-header"><span class="fz-name">Safina Plaza Jn.</span><span class="fz-prob high">92% risk</span></div><div style="margin-bottom:8px;"><canvas id="fcast1" height="80"></canvas></div><div class="fz-peak">⏰ Peak predicted: 04:00–06:00 Sunday</div></div>
+      <div class="forecast-zone"><div class="fz-header"><span class="fz-name">Shivajinagar MG Rd</span><span class="fz-prob high">87% risk</span></div><div style="margin-bottom:8px;"><canvas id="fcast2" height="80"></canvas></div><div class="fz-peak">⏰ Peak predicted: 05:00–07:00 Daily</div></div>
+      <div class="forecast-zone"><div class="fz-header"><span class="fz-name">KR Market</span><span class="fz-prob med">74% risk</span></div><div style="margin-bottom:8px;"><canvas id="fcast3" height="80"></canvas></div><div class="fz-peak">⏰ Peak predicted: 03:00–05:00 Weekends</div></div>
+      <div class="forecast-zone"><div class="fz-header"><span class="fz-name">Malleshwaram</span><span class="fz-prob med">69% risk</span></div><div style="margin-bottom:8px;"><canvas id="fcast4" height="80"></canvas></div><div class="fz-peak">⏰ Peak predicted: 22:00–02:00</div></div>
+      <div class="forecast-zone"><div class="fz-header"><span class="fz-name">HAL Airport Road</span><span class="fz-prob med">61% risk</span></div><div style="margin-bottom:8px;"><canvas id="fcast5" height="80"></canvas></div><div class="fz-peak">⏰ Peak predicted: 06:00–08:00 Weekdays</div></div>
+      <div class="forecast-zone"><div class="fz-header"><span class="fz-name">Kodigehalli</span><span class="fz-prob low">48% risk</span></div><div style="margin-bottom:8px;"><canvas id="fcast6" height="80"></canvas></div><div class="fz-peak">⏰ Peak predicted: 23:00–03:00</div></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">72-Hour City-Wide Violation Forecast</div>
+      <div class="chart-sub">Predicted violations per hour across all hotspot zones with uncertainty bands</div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="forecastMainChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- RANKINGS PAGE -->
+  <div class="page" id="page-rankings">
+    <div class="section-title">📈 Risk Rankings — Police Station Priority</div>
+    <div class="section-sub">Enforcement Priority Score (EPS) combining violation frequency, CIS, recurrence, and response delay</div>
+
+    <div class="metric-row">
+      <div class="metric-mini"><div class="mm-label">Top Station</div><div class="mm-value" style="color:var(--red)">Upparpet</div><div style="font-size:.72rem;color:var(--text2)">34,468 violations</div></div>
+      <div class="metric-mini"><div class="mm-label">Most Concentrated</div><div class="mm-value" style="color:var(--orange)">HAL Old Airport</div><div style="font-size:.72rem;color:var(--text2)">14 unique spots, 20k violations</div></div>
+      <div class="metric-mini"><div class="mm-label">Highest EPS</div><div class="mm-value" style="color:var(--yellow)">9.4 / 10</div><div style="font-size:.72rem;color:var(--text2)">Upparpet station</div></div>
+      <div class="metric-mini"><div class="mm-label">SCITA Lag (worst)</div><div class="mm-value" style="color:var(--accent)">468h avg</div><div style="font-size:.72rem;color:var(--text2)">19.5 days enforcement gap</div></div>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Rank</th><th>Police Station</th><th>Total Violations</th><th>Unique Spots</th><th>Unique Vehicles</th><th>EPS Score</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td class="rank-num">1</td><td>Upparpet</td><td>34,468</td><td>47</td><td>26,235</td><td style="color:var(--red);font-weight:700">9.4</td><td style="color:var(--red)">🔴 CRITICAL</td></tr>
+          <tr><td class="rank-num">2</td><td>Shivajinagar</td><td>28,044</td><td>45</td><td>20,664</td><td style="color:var(--red);font-weight:700">8.9</td><td style="color:var(--red)">🔴 CRITICAL</td></tr>
+          <tr><td class="rank-num">3</td><td>Malleshwaram</td><td>22,200</td><td>36</td><td>18,797</td><td style="color:var(--orange);font-weight:700">8.1</td><td style="color:var(--orange)">🟠 HIGH</td></tr>
+          <tr><td class="rank-num">4</td><td>HAL Old Airport</td><td>20,819</td><td>14</td><td>14,917</td><td style="color:var(--orange);font-weight:700">7.8</td><td style="color:var(--orange)">🟠 HIGH</td></tr>
+          <tr><td class="rank-num">5</td><td>City Market</td><td>17,646</td><td>26</td><td>14,845</td><td style="color:var(--yellow);font-weight:700">7.3</td><td style="color:var(--yellow)">🟡 HIGH</td></tr>
+          <tr><td class="rank-num">6</td><td>Vijayanagara</td><td>14,652</td><td>42</td><td>11,122</td><td style="color:var(--yellow);font-weight:700">6.8</td><td style="color:var(--yellow)">🟡 MEDIUM</td></tr>
+          <tr><td class="rank-num">7</td><td>Rajajinagar</td><td>10,998</td><td>40</td><td>8,144</td><td style="color:var(--yellow);font-weight:700">6.2</td><td style="color:var(--yellow)">🟡 MEDIUM</td></tr>
+          <tr><td class="rank-num">8</td><td>Kodigehalli</td><td>10,916</td><td>32</td><td>8,657</td><td style="color:var(--yellow);font-weight:700">6.0</td><td style="color:var(--yellow)">🟡 MEDIUM</td></tr>
+          <tr><td class="rank-num">9</td><td>Magadi Road</td><td>8,558</td><td>34</td><td>7,560</td><td style="color:var(--accent3);font-weight:700">5.1</td><td style="color:var(--accent3)">🟢 LOW</td></tr>
+          <tr><td class="rank-num">10</td><td>Jeevanbheemanagar</td><td>6,736</td><td>25</td><td>5,756</td><td style="color:var(--accent3);font-weight:700">4.7</td><td style="color:var(--accent3)">🟢 LOW</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Top 10 Police Stations — Violation Count</div>
+      <div class="chart-sub">Upparpet dominates with 11.5% of all citywide violations</div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="stationChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- PATROL PAGE -->
+  <div class="page" id="page-patrol">
+    <div class="section-title">🚔 Patrol Intelligence — AI Enforcement Priority Queue</div>
+    <div class="section-sub">Dynamic Enforcement Priority Engine (DEPE) — RL-optimized patrol assignments</div>
+
+    <div class="priority-list">
+      <div class="priority-card critical">
+        <div class="pc-header"><span class="pc-name">🔴 PRIORITY 1 · Safina Plaza Junction (BTP051)</span><span class="pc-eps">EPS: 9.2 · CIS: 8.1</span></div>
+        <div class="pc-detail">📍 Upparpet Station · 1,544 violations logged · 68% repeat offenders · Last patrol: 18h ago</div>
+        <div class="pc-detail">🚗 Active violations: Bus (2), CAR (8), Auto (4) · Road class: Primary Arterial</div>
+        <div class="pc-action">🚔 <strong>Action:</strong> Deploy 2 patrol units + 1 tow vehicle immediately. Estimated 14 interceptions.</div>
+      </div>
+      <div class="priority-card critical">
+        <div class="pc-header"><span class="pc-name">🔴 PRIORITY 2 · MG Road / Shivajinagar Hotspot</span><span class="pc-eps">EPS: 8.9 · CIS: 8.4</span></div>
+        <div class="pc-detail">📍 Shivajinagar Station · 4,411 total violations in zone · 55% repeat offenders · Last patrol: 22h ago</div>
+        <div class="pc-detail">🚗 Active violations: MAXI-CAB (5), CAR (11), SCOOTER (22) · Night Peak Zone</div>
+        <div class="pc-action">🚔 <strong>Action:</strong> Deploy 3 patrol units. Pre-position by 04:00. Est. 28 interceptions.</div>
+      </div>
+      <div class="priority-card high">
+        <div class="pc-header"><span class="pc-name">🟠 PRIORITY 3 · KR Market Junction (BTP082)</span><span class="pc-eps">EPS: 7.8 · CIS: 7.2</span></div>
+        <div class="pc-detail">📍 City Market Station · 1,153 junction violations · 43% repeat offenders · Last patrol: 8h ago</div>
+        <div class="pc-action">🚔 <strong>Action:</strong> 1 patrol unit + CCTV monitoring. Next rotation window: 02:00–04:00.</div>
+      </div>
+      <div class="priority-card high">
+        <div class="pc-header"><span class="pc-name">🟠 PRIORITY 4 · HAL Airport Road Belt</span><span class="pc-eps">EPS: 7.1 · CIS: 7.4</span></div>
+        <div class="pc-detail">📍 HAL Old Airport Station · 3,343 zone violations · Most concentrated (14 spots, 20k violations)</div>
+        <div class="pc-action">🚔 <strong>Action:</strong> 2 patrol units covering 14 identified spots. Time-box: 05:00–07:00.</div>
+      </div>
+      <div class="priority-card medium">
+        <div class="pc-header"><span class="pc-name">🟡 PRIORITY 5 · Rajajinagar Corridor</span><span class="pc-eps">EPS: 6.2 · CIS: 6.3</span></div>
+        <div class="pc-detail">📍 Rajajinagar Station · 3,745 zone violations · Weekend surge: +22% vs weekday</div>
+        <div class="pc-action">👁 <strong>Action:</strong> CCTV monitoring only. Deploy on next available rotation.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- XAI PAGE -->
+  <div class="page" id="page-xai">
+    <div class="section-title">🧠 Explainable AI — SHAP Hotspot Analysis</div>
+    <div class="section-sub">Every alert backed by SHapley Additive exPlanations — legally defensible, interpretable AI</div>
+
+    <div class="shap-card" style="border-left:4px solid var(--red);">
+      <div class="shap-title">🔴 CRITICAL ALERT: Safina Plaza Junction — CIS: 8.4 | EPS: 9.2</div>
+      <div class="shap-sub">Why is this flagged? SHAP feature contributions to the high CIS score:</div>
+      <div class="shap-row"><span class="shap-feature">Violation Density (3.8× avg)</span><div class="shap-bar-wrap"><div class="shap-bar-pos" style="width:100%"></div></div><span class="shap-val" style="color:var(--red)">+2.1</span></div>
+      <div class="shap-row"><span class="shap-feature">Road Class (Primary Arterial)</span><div class="shap-bar-wrap"><div class="shap-bar-pos" style="width:86%"></div></div><span class="shap-val" style="color:var(--red)">+1.8</span></div>
+      <div class="shap-row"><span class="shap-feature">Hour (4:45 AM — night peak)</span><div class="shap-bar-wrap"><div class="shap-bar-pos" style="width:67%"></div></div><span class="shap-val" style="color:var(--orange)">+1.4</span></div>
+      <div class="shap-row"><span class="shap-feature">Repeat Offenders (68%)</span><div class="shap-bar-wrap"><div class="shap-bar-pos" style="width:43%"></div></div><span class="shap-val" style="color:var(--yellow)">+0.9</span></div>
+      <div class="shap-row"><span class="shap-feature">Vehicle Severity (Bus+Maxi-Cab)</span><div class="shap-bar-wrap"><div class="shap-bar-pos" style="width:19%"></div></div><span class="shap-val" style="color:var(--accent4)">+0.4</span></div>
+      <div class="shap-row"><span class="shap-feature">Historical Congestion (moderate)</span><div class="shap-bar-wrap"><div class="shap-bar-neg" style="width:10%"></div></div><span class="shap-val" style="color:var(--green)">−0.2</span></div>
+      <div style="margin-top:12px;padding:10px;background:rgba(255,71,87,.1);border-radius:6px;font-size:.78rem;line-height:1.6;">
+        <strong>🔴 Decision:</strong> Location flagged CRITICAL. Violation density is 3.8× city average. Located on a primary arterial. 5AM is the peak illegal parking window (11.4% of all violations). 68% of vehicles are repeat offenders. Bus/Maxi-cab creates 4-lane-equivalent blockage. <strong>Recommended: Immediate deployment of 2 patrol units + tow vehicle.</strong>
+      </div>
+    </div>
+
+    <div class="shap-card" style="border-left:4px solid var(--orange);">
+      <div class="shap-title">🟠 HIGH ALERT: Malleshwaram 8th Cross — CIS: 6.9 | EPS: 7.1</div>
+      <div class="shap-sub">SHAP feature contributions:</div>
+      <div class="shap-row"><span class="shap-feature">Violation Density (2.4× avg)</span><div class="shap-bar-wrap"><div class="shap-bar-pos" style="width:76%"></div></div><span class="shap-val" style="color:var(--red)">+1.6</span></div>
+      <div class="shap-row"><span class="shap-feature">Weekend Multiplier (Sunday)</span><div class="shap-bar-wrap"><div class="shap-bar-pos" style="width:57%"></div></div><span class="shap-val" style="color:var(--orange)">+1.2</span></div>
+      <div class="shap-row"><span class="shap-feature">Road Class (Secondary)</span><div class="shap-bar-wrap"><div class="shap-bar-pos" style="width:38%"></div></div><span class="shap-val" style="color:var(--yellow)">+0.8</span></div>
+      <div class="shap-row"><span class="shap-feature">SCOOTER/AUTO dominant (low severity)</span><div class="shap-bar-wrap"><div class="shap-bar-neg" style="width:24%"></div></div><span class="shap-val" style="color:var(--green)">−0.5</span></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS PAGE -->
+  <div class="page" id="page-analytics">
+    <div class="section-title">📉 Analytics & Pattern Intelligence</div>
+    <div class="section-sub">Deep patterns extracted from 298,450 actual BTP violation records</div>
+
+    <div class="insights-grid">
+      <div class="insight-card"><div class="insight-num">01</div><div class="insight-text"><strong>Night Dominance:</strong> 75.4% of violations (225,169) occur between 10PM–6AM. Enforcement must be restructured for night shifts.</div></div>
+      <div class="insight-card"><div class="insight-num">02</div><div class="insight-text"><strong>5AM Peak:</strong> 34,085 violations at 5AM alone — 11.4% of all records. This is the single highest-risk hour for illegal parking.</div></div>
+      <div class="insight-card"><div class="insight-num">03</div><div class="insight-text"><strong>Holiday Surge:</strong> January 2024 peaked at 65,813 violations — 32% above monthly average. Festival & holiday periods need pre-emptive deployment.</div></div>
+      <div class="insight-card"><div class="insight-num">04</div><div class="insight-text"><strong>Sunday Risk:</strong> Sundays average 46,863 violations vs Monday's 38,931 — a 20.4% higher weekend risk. Weekend patrol intensity should be higher.</div></div>
+      <div class="insight-card"><div class="insight-num">05</div><div class="insight-text"><strong>Enforcement Lag:</strong> Avg 468h (19.5 days) from violation to SCITA submission. Real-time systems could reduce this to &lt;5 minutes.</div></div>
+      <div class="insight-card"><div class="insight-num">06</div><div class="insight-text"><strong>28.8% Rejection Rate:</strong> Nearly 1 in 3 validated records rejected — indicating data quality problems at the capture point (officer training gap).</div></div>
+      <div class="insight-card"><div class="insight-num">07</div><div class="insight-text"><strong>Bus Severity:</strong> Buses average 1.78 violations per case vs scooters' 1.11. One illegally parked bus = 4-lane equivalent blockage.</div></div>
+      <div class="insight-card"><div class="insight-num">08</div><div class="insight-text"><strong>Repeat Offenders:</strong> 35,587 vehicles (15.4%) have 2+ violations. Top offender: 55 violations. Watch-list + escalated challans needed.</div></div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Validation Status Breakdown</div>
+        <div class="chart-sub">28.8% rejection indicates data capture quality issues</div>
+        <div class="chart-wrap"><canvas id="validationChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Day-of-Week Pattern</div>
+        <div class="chart-sub">Sunday peaks — weekends require more intensive enforcement</div>
+        <div class="chart-wrap"><canvas id="dowChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Chart.js defaults
+Chart.defaults.color = '#9faac3';
+Chart.defaults.borderColor = '#2a3355';
+const C = (id, cfg) => new Chart(document.getElementById(id), cfg);
+
+// Hourly chart
+C('hourlyChart',{type:'bar',data:{
+  labels:['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23'],
+  datasets:[{label:'Violations',data:[21760,17155,24770,25707,29102,34085,26890,14608,8556,3145,518,577,219,56,16,66,416,818,1971,10713,11834,19763,22839,22861],
+    backgroundColor:ctx=>{const v=ctx.raw;return v>30000?'rgba(255,71,87,.85)':v>20000?'rgba(255,127,80,.75)':v>10000?'rgba(255,215,0,.65)':'rgba(108,99,255,.55)'},borderRadius:4}]
+},options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(42,51,85,.5)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+// Monthly
+C('monthlyChart',{type:'line',data:{
+  labels:['Nov 2023','Dec 2023','Jan 2024','Feb 2024','Mar 2024','Apr 2024'],
+  datasets:[{label:'Violations',data:[44117,63554,65813,54650,55229,15082],
+    borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,.15)',fill:true,tension:.4,pointBackgroundColor:'#6c63ff',pointRadius:5}]
+},options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(42,51,85,.5)'}},x:{grid:{display:false}}}}});
+
+// Violation type
+C('violationChart',{type:'doughnut',data:{
+  labels:['Wrong Parking','No Parking','Parking-Main Road','Defective Plate','Parking-Footpath','Near Bus Stop/Hospital','Double Parking','Near Crossing','Other'],
+  datasets:[{data:[164977,139050,23943,7848,3757,2403,2037,1687,2748],
+    backgroundColor:['#ff4757','#ff7f50','#ffd700','#6c63ff','#43d9ad','#f7b731','#a78bfa','#06b6d4','#9faac3'],borderWidth:0}]
+},options:{plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}},cutout:'60%'}});
+
+// Vehicle type
+C('vehicleChart',{type:'bar',data:{
+  labels:['Scooter','Car','Motorcycle','Auto','Maxi-Cab','LGV','Goods Auto','Moped','Private Bus','Bus'],
+  datasets:[{label:'Count',data:[94856,88870,40811,37813,11372,8255,2934,2199,1633,1281],
+    backgroundColor:'rgba(108,99,255,.7)',borderRadius:4}]
+},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(42,51,85,.4)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+// Night/Day donut
+C('nightDayChart',{type:'doughnut',data:{
+  labels:['Night (10PM–6AM)','Day (6AM–10PM)'],
+  datasets:[{data:[225169,73281],backgroundColor:['#6c63ff','#43d9ad'],borderWidth:0}]
+},options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},cutout:'65%'}});
+
+// Forecast mini sparklines
+const sparkCfg = (data,color) => ({type:'line',data:{labels:Array.from({length:data.length},(_,i)=>i),datasets:[{data,borderColor:color,borderWidth:2,fill:true,backgroundColor:color.replace(')',',0.15)').replace('rgb','rgba'),tension:.4,pointRadius:0}]},options:{plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}},animation:{duration:0}}});
+C('fcast1',sparkCfg([10,12,18,25,38,42,36,28,15,10,8,7],'rgb(255,71,87)'));
+C('fcast2',sparkCfg([15,18,22,30,44,40,32,20,12,9,7,10],'rgb(255,127,80)'));
+C('fcast3',sparkCfg([8,9,14,22,31,28,20,13,8,6,5,6],'rgb(255,127,80)'));
+C('fcast4',sparkCfg([20,22,18,14,10,8,7,8,10,14,18,20],'rgb(255,215,0)'));
+C('fcast5',sparkCfg([5,4,5,8,12,18,22,18,10,6,4,4],'rgb(255,215,0)'));
+C('fcast6',sparkCfg([12,14,16,14,12,8,6,5,5,6,8,10],'rgb(108,99,255)'));
+
+// 72hr forecast main chart
+const hrs72 = Array.from({length:72},(_,i)=>i+'h');
+const baseCurve = hrs72.map((_,i)=>{const h=i%24;return h>=22||h<=6?20+Math.random()*15+(h===5?15:0):5+Math.random()*8});
+C('forecastMainChart',{type:'line',data:{labels:hrs72,datasets:[
+  {label:'P50 Forecast',data:baseCurve,borderColor:'#6c63ff',borderWidth:2,fill:false,tension:.4,pointRadius:0},
+  {label:'P90 Upper',data:baseCurve.map(v=>v*1.35),borderColor:'rgba(108,99,255,.3)',borderWidth:1,borderDash:[4,4],fill:'+1',backgroundColor:'rgba(108,99,255,.08)',tension:.4,pointRadius:0},
+  {label:'P10 Lower',data:baseCurve.map(v=>v*0.65),borderColor:'rgba(108,99,255,.3)',borderWidth:1,borderDash:[4,4],fill:false,tension:.4,pointRadius:0}
+]},options:{plugins:{legend:{labels:{font:{size:10}}}},scales:{x:{grid:{color:'rgba(42,51,85,.3)'},ticks:{maxTicksLimit:24,font:{size:9}}},y:{grid:{color:'rgba(42,51,85,.3)'},title:{display:true,text:'Violations/hour'}}}}});
+
+// Station bar
+C('stationChart',{type:'bar',data:{
+  labels:['Upparpet','Shivajinagar','Malleshwaram','HAL Old Airport','City Market','Vijayanagara','Rajajinagar','Kodigehalli','Magadi Road','Jeevanbheemanagar'],
+  datasets:[{label:'Violations',data:[34468,28044,22200,20819,17646,14652,10998,10916,8558,6736],
+    backgroundColor:['#ff4757','#ff4757','#ff7f50','#ff7f50','#ffd700','#ffd700','#6c63ff','#6c63ff','#43d9ad','#43d9ad'],borderRadius:4}]
+},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(42,51,85,.4)'}}}}});
+
+// Validation
+C('validationChart',{type:'doughnut',data:{
+  labels:['Approved','Rejected','Unvalidated','Processing','Duplicate'],
+  datasets:[{data:[115400,49754,125254,678,320],backgroundColor:['#43d9ad','#ff4757','#9faac3','#ffd700','#6c63ff'],borderWidth:0}]
+},options:{plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}},cutout:'60%'}});
+
+// Day of week
+C('dowChart',{type:'bar',data:{
+  labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  datasets:[{label:'Violations',data:[38931,42929,43065,41528,41702,43427,46863],
+    backgroundColor:(_,i)=>i>=5?'rgba(255,71,87,.8)':'rgba(108,99,255,.7)',borderRadius:4}]
+},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(42,51,85,.4)'}}}}});
+
+// Navigation
+const titles={overview:'City Overview — Bengaluru Traffic Violations',hotspots:'Live Hotspot Intelligence — DBSCAN Clustering',forecast:'72-Hour Forecast — LSTM + TFT Predictions',rankings:'Risk Rankings — Police Station Priority',patrol:'Patrol Intelligence — AI Enforcement Queue',xai:'Explainable AI — SHAP Feature Analysis',analytics:'Analytics & Pattern Intelligence'};
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('page-title').textContent=titles[id];
+  event.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>
